@@ -9,6 +9,7 @@ import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.border.TitledBorder;
@@ -18,23 +19,56 @@ import net.miginfocom.swing.MigLayout;
 public class Simulator extends JFrame {
 
 	private static final long serialVersionUID = 1L;
-    private static JButton btnRun;
-    private static JTextField tfSteps;
-    private static JTextField tfReplications;
 
-	private static void startNewSimulation() {
-	    System.out.println("Starting a new simulation...");
+	private JButton btnRun;
+    private JTextField tfSteps;
+    private JTextField tfReplications;
+
+	private void checkValuesAndStartNewSimulation() {
+	    int steps = 0;
+	    int replications = 0;
+	    StringBuilder sb = new StringBuilder();
+
+	    String readSteps = tfSteps.getText();
+        if (readSteps.equals("")) {
+            sb.append("The number of steps must be an integer between 0 and " + Integer.MAX_VALUE + ".\n");
+        } else {
+            try {
+	            steps = Integer.parseInt(readSteps);
+	            if (steps <= 0) {
+	                sb.append("The number of steps must be an integer between 0 and " + Integer.MAX_VALUE + ".\n");
+	            }
+	            String replicationsRead = tfReplications.getText();
+	            if (!replicationsRead.equals("")) {
+	                replications = Integer.parseInt(replicationsRead);
+	                if (replications < 0) {
+	                    sb.append("The number of replications must be an integer between 0 and " + Integer.MAX_VALUE + ".\n");
+	                }
+	            }
+            } catch (NumberFormatException e) {
+                sb.append("Only integers between 0 and " + Integer.MAX_VALUE + "are permitted.");
+            }
+        }
+	    
+        String message = sb.toString();
+	    if (message != null && message.length() > 0) {
+	        JOptionPane.showMessageDialog(null, message, "Erros encontrados", JOptionPane.ERROR_MESSAGE);
+	    } else {
+	        System.out.println("Starting a new simulation...");
+	        System.out.println("Steps.......: " + steps);
+	        System.out.println("Replications: " + replications);
+	    }
 	}
 
-	private static void createActionListeners() {
-		btnRun.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent event) {
-				startNewSimulation();
-			}
-		});
+	private void createActionListeners() {
+	    btnRun.addActionListener(new ActionListener() {
+	        public void actionPerformed(ActionEvent event) {
+	            checkValuesAndStartNewSimulation();
+	        }
+	    });
 	}
 
-    public static void addComponentsToPane(Container pane) {
+    public void addComponentsToPane(Container pane) {
         JPanel leftPanel = new JPanel();
         JPanel rightPanel = new JPanel();
         rightPanel.setBorder(new TitledBorder("Charts"));
@@ -68,13 +102,11 @@ public class Simulator extends JFrame {
      * this method should be invoked from the
      * event-dispatching thread.
      */
-    private static void createAndShowGUI() {
-        //Create and set up the window.
+    private void createAndShowGUI() {
         JFrame frame = new JFrame("GridBagLayoutDemo");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setResizable(false);
 
-        //Set up the content pane.
         addComponentsToPane(frame.getContentPane());
         createActionListeners();
 
@@ -84,12 +116,14 @@ public class Simulator extends JFrame {
         frame.setVisible(true);
     }
 
+    public Simulator() {
+        createAndShowGUI();
+    }
+
     public static void main(String[] args) {
-        //Schedule a job for the event-dispatching thread:
-        //creating and showing this application's GUI.
         javax.swing.SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                createAndShowGUI();
+                new Simulator();
             }
         });
     }
