@@ -1,9 +1,11 @@
 package view;
 
+import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.List;
 
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
@@ -14,6 +16,15 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.border.TitledBorder;
 
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.JFreeChart;
+import org.jfree.data.xy.XYDataset;
+import org.jfree.data.xy.XYSeries;
+import org.jfree.data.xy.XYSeriesCollection;
+
+import controller.MonteCarloSimulation;
+import model.Coord;
 import net.miginfocom.swing.MigLayout;
 
 public class Simulator extends JFrame {
@@ -21,12 +32,32 @@ public class Simulator extends JFrame {
 	private static final long serialVersionUID = 1L;
 
 	private JButton btnRun;
+	private JButton btnWalk;
     private JTextField tfSteps;
     private JTextField tfReplications;
+    private JPanel rightPanel;
+    private MonteCarloSimulation simulation;
 
-	private void checkValuesAndStartNewSimulation() {
+    private void plotDrunkWalk() {
+        JFreeChart chart = ChartFactory.createXYLineChart("Drunk Walk", "x", "y", createDataSet()); 
+        ChartPanel chartPanel = new ChartPanel(chart);
+        rightPanel.add(chartPanel, BorderLayout.CENTER);
+        rightPanel.validate();
+    }
+
+    private XYDataset createDataSet() {
+        List<Coord> data = simulation.getXYData();
+        XYSeries series = new XYSeries("Drunk Walk", false);
+        series.add(0.0d, 0.0d);
+        for (Coord coord : data) {
+            series.add(coord.getX(), coord.getY());
+        }
+        return new XYSeriesCollection(series);
+    }
+
+    private void checkValuesAndStartNewSimulation() {
 	    int steps = 0;
-	    int replications = 0;
+	    int replications = 1;
 	    StringBuilder sb = new StringBuilder();
 
 	    String readSteps = tfSteps.getText();
@@ -41,7 +72,7 @@ public class Simulator extends JFrame {
 	            String replicationsRead = tfReplications.getText();
 	            if (!replicationsRead.equals("")) {
 	                replications = Integer.parseInt(replicationsRead);
-	                if (replications < 0) {
+	                if (replications <= 0) {
 	                    sb.append("The number of replications must be an integer between 0 and " + Integer.MAX_VALUE + ".\n");
 	                }
 	            }
@@ -49,28 +80,59 @@ public class Simulator extends JFrame {
                 sb.append("Only integers between 0 and " + Integer.MAX_VALUE + "are permitted.");
             }
         }
-	    
+
         String message = sb.toString();
 	    if (message != null && message.length() > 0) {
-	        JOptionPane.showMessageDialog(null, message, "Erros encontrados", JOptionPane.ERROR_MESSAGE);
+	        JOptionPane.showMessageDialog(null, message, "Ops!", JOptionPane.ERROR_MESSAGE);
 	    } else {
-	        System.out.println("Starting a new simulation...");
+	        System.out.println("    ===============================");
+	        System.out.println("       Starting a new simulation");
+	        System.out.println("    ===============================");
+	        System.out.println();
 	        System.out.println("Steps.......: " + steps);
 	        System.out.println("Replications: " + replications);
+	        System.out.println();
+
+	        simulation = new MonteCarloSimulation(steps);
+	        simulation.run(replications);
+	        simulation.printReplications();
+
+	        if (replications == 1) {
+	            btnWalk.setEnabled(true);
+	        } else {
+	            btnWalk.setEnabled(false);
+	        }
 	    }
 	}
+    
+    private void resetRightPanel() {
+        rightPanel.removeAll();
+        rightPanel.revalidate();
+        rightPanel.repaint();
+    }
 
-	private void createActionListeners() {
+    private void resetButtons() {
+        btnWalk.setEnabled(false);
+    }
+
+    private void createActionListeners() {
 	    btnRun.addActionListener(new ActionListener() {
 	        public void actionPerformed(ActionEvent event) {
+	            resetButtons();
+	            resetRightPanel();
 	            checkValuesAndStartNewSimulation();
 	        }
 	    });
+	    btnWalk.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent event) {
+                plotDrunkWalk();
+            }
+        });
 	}
 
     public void addComponentsToPane(Container pane) {
         JPanel leftPanel = new JPanel();
-        JPanel rightPanel = new JPanel();
+        rightPanel = new JPanel(new BorderLayout());
         rightPanel.setBorder(new TitledBorder("Charts"));
         rightPanel.setPreferredSize(new Dimension(500, 300));
         leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.Y_AXIS));
@@ -79,15 +141,21 @@ public class Simulator extends JFrame {
         inputPanel.setBorder(new TitledBorder("Input"));
         tfSteps = new JTextField(10);
         tfReplications = new JTextField(10);
+        tfReplications.setText("1");
         btnRun = new JButton("Run");
+
         inputPanel.add(new JLabel("Steps:"));
         inputPanel.add(tfSteps);
         inputPanel.add(new JLabel("Replications:"));
         inputPanel.add(tfReplications);
         inputPanel.add(btnRun, "span,growx");
 
-        JPanel outputPanel = new JPanel(new MigLayout("wrap 2"));
+        JPanel outputPanel = new JPanel(new MigLayout("wrap 1"));
         outputPanel.setBorder(new TitledBorder("Output"));
+
+        btnWalk = new JButton("Show Drunk Walk");
+        btnWalk.setEnabled(false);
+        outputPanel.add(btnWalk, "span,growx");
 
         leftPanel.add(inputPanel);
         leftPanel.add(outputPanel);
