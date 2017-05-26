@@ -1,136 +1,96 @@
 package view;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
+import java.awt.Container;
 import java.awt.Dimension;
-import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-import javax.swing.Action;
-import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
+import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
-import javax.swing.KeyStroke;
-import javax.swing.SpringLayout;
-import javax.swing.border.EmptyBorder;
+import javax.swing.border.TitledBorder;
+
+import net.miginfocom.swing.MigLayout;
 
 public class Simulator extends JFrame {
 
 	private static final long serialVersionUID = 1L;
-	private JPanel contentPane;
-	private JMenuItem miNew;
+    private static JButton btnRun;
+    private static JTextField tfSteps;
+    private static JTextField tfReplications;
 
-	/**
-	 * Launch the application.
-	 */
-	public static void main(String[] args) {
-		EventQueue.invokeLater(new Runnable() {
-			public void run() {
-				try {
-					Simulator frame = new Simulator();
-					frame.setVisible(true);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-		});
+	private static void startNewSimulation() {
+	    System.out.println("Starting a new simulation...");
 	}
 
-	/**
-	 * Create the frame.
-	 */
-	public Simulator() {
-		createContentPane();
-		createMenuBar();
-		createActionListeners();
-		createAndShowWindow();
-	}
-
-	private void createActionListeners() {
-		miNew.addActionListener(new ActionListener() {
+	private static void createActionListeners() {
+		btnRun.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent event) {
 				startNewSimulation();
 			}
 		});
 	}
 
-	private void createMenuBar() {
-		JMenuBar menuBar = new JMenuBar();
-		setJMenuBar(menuBar);
+    public static void addComponentsToPane(Container pane) {
+        JPanel leftPanel = new JPanel();
+        JPanel rightPanel = new JPanel();
+        rightPanel.setBorder(new TitledBorder("Charts"));
+        rightPanel.setPreferredSize(new Dimension(500, 300));
+        leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.Y_AXIS));
 
-		JMenu fileMenu = new JMenu("File");
-		miNew = new JMenuItem("New simulation");
-		fileMenu.add(miNew);
+        JPanel inputPanel = new JPanel(new MigLayout("wrap 2", "[r][l]", "[c][c][c]"));
+        inputPanel.setBorder(new TitledBorder("Input"));
+        tfSteps = new JTextField(10);
+        tfReplications = new JTextField(10);
+        btnRun = new JButton("Run");
+        inputPanel.add(new JLabel("Steps:"));
+        inputPanel.add(tfSteps);
+        inputPanel.add(new JLabel("Replications:"));
+        inputPanel.add(tfReplications);
+        inputPanel.add(btnRun, "span,growx");
 
-		ExitAction exitAction = new ExitAction();
-		exitAction.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke("control X"));
+        JPanel outputPanel = new JPanel(new MigLayout("wrap 2"));
+        outputPanel.setBorder(new TitledBorder("Output"));
 
-		fileMenu.add(new JMenuItem(exitAction));
-		menuBar.add(fileMenu);
-		
-	}
-	
-	private void startNewSimulation() {
-//		JPanel inputPanel = new JPanel();
-//		inputPanel.setLayout(new BoxLayout(inputPanel, BoxLayout.Y_AXIS));
-//		LabeledTextInput stepsPanel = new LabeledTextInput("Steps", "10");
-//		LabeledTextInput replicationsPanel = new LabeledTextInput("Replications", "0");
-//		inputPanel.add(stepsPanel);
-//		inputPanel.add(replicationsPanel);
-		JPanel inputPanel = new JPanel(new SpringLayout());
-		JLabel lblSteps = new JLabel("Steps", JLabel.TRAILING);
-		JLabel lblReplications = new JLabel("Replications", JLabel.TRAILING);
-		JTextField tfSteps = new JTextField(10);
-		JTextField tfReplications = new JTextField(10);
-		lblSteps.setLabelFor(tfSteps);
-		lblReplications.setLabelFor(tfReplications);
-		inputPanel.add(lblSteps);
-		inputPanel.add(tfSteps);
-		inputPanel.add(lblReplications);
-		inputPanel.add(tfReplications);
-		SpringUtilities.makeCompactGrid(inputPanel, 2, 2, 6, 6, 6, 6);
+        leftPanel.add(inputPanel);
+        leftPanel.add(outputPanel);
 
-		JPanel outputPanel = new JPanel();
-		outputPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
-		outputPanel.setPreferredSize(new Dimension(100, 270));
+        pane.setLayout(new BoxLayout(pane, BoxLayout.X_AXIS));
+        pane.add(leftPanel);
+        pane.add(rightPanel);
+    }
 
-		JPanel sidePanel = new JPanel();
-		sidePanel.setLayout(new BoxLayout(sidePanel, BoxLayout.Y_AXIS));
-		sidePanel.setBorder(BorderFactory.createLineBorder(Color.BLUE));
-		sidePanel.add(inputPanel);
-		sidePanel.add(outputPanel);
+    /**
+     * Create the GUI and show it.  For thread safety,
+     * this method should be invoked from the
+     * event-dispatching thread.
+     */
+    private static void createAndShowGUI() {
+        //Create and set up the window.
+        JFrame frame = new JFrame("GridBagLayoutDemo");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setResizable(false);
 
-		JPanel chartPanel = new JPanel();
-		chartPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
-		chartPanel.setPreferredSize(new Dimension(300, 300));
-		chartPanel.setVisible(true);
+        //Set up the content pane.
+        addComponentsToPane(frame.getContentPane());
+        createActionListeners();
 
-		contentPane.add(sidePanel, BorderLayout.LINE_START);
-		contentPane.add(chartPanel, BorderLayout.LINE_END);
+        //Display the window.
+        frame.pack();
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
+    }
 
-		revalidate();
-		repaint();
-	}
-
-	private void createContentPane() {
-		contentPane = new JPanel();
-		contentPane.setLayout(new BoxLayout(contentPane, BoxLayout.X_AXIS));
-		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
-		contentPane.setVisible(true);
-		setContentPane(contentPane);
-	}
-
-	private void createAndShowWindow() {
-		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setPreferredSize(new Dimension(600, 480));
-		pack();
-		setLocationRelativeTo(null);
-	}
+    public static void main(String[] args) {
+        //Schedule a job for the event-dispatching thread:
+        //creating and showing this application's GUI.
+        javax.swing.SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                createAndShowGUI();
+            }
+        });
+    }
 }
