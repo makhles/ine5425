@@ -58,13 +58,13 @@ public class MonteCarloSimulation {
 	        System.out.println("-----------------------------------------");
 	        System.out.println("Replication: " + rep);
 	        System.out.println("-----------------------------------------");
-	        System.out.println("  Step  Angle    x        y     Distance");
+	        System.out.println("  Step  Angle    x        y     sqrt(n)     Dn");
 	        step = 0;
 	        for (Coord coord : replication.getCoordinates()) {
 	            x = coord.getX();
 	            y = coord.getY();
 	            distance = Math.sqrt(x*x + y*y);
-	            System.out.format("%4d    %3d  %7.3f  %7.3f  %7.3f%n", step+1, angles.get(step), x, y, distance);
+	            System.out.format("%4d    %3d  %7.3f  %7.3f  %7.3f  %7.3f%n", step+1, angles.get(step), x, y, Math.sqrt(step+1), distance);
 	            step++;
 	        }
 	        System.out.println();
