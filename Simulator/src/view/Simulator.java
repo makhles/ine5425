@@ -19,7 +19,6 @@ import javax.swing.border.TitledBorder;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
-import org.jfree.data.xy.XYDataset;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
@@ -33,26 +32,52 @@ public class Simulator extends JFrame {
 
 	private JButton btnRun;
 	private JButton btnWalk;
+	private JButton btnDistance;
     private JTextField tfSteps;
     private JTextField tfReplications;
     private JPanel rightPanel;
     private MonteCarloSimulation simulation;
 
-    private void plotDrunkWalk() {
-        JFreeChart chart = ChartFactory.createXYLineChart("Drunk Walk", "x", "y", createDataSet()); 
-        ChartPanel chartPanel = new ChartPanel(chart);
+    private JFreeChart drunkWalkChart;
+    private JFreeChart distanceComparisonChart;
+
+    private void plotChart(JFreeChart chart) {
+    	resetRightPanel();
+    	ChartPanel chartPanel = new ChartPanel(chart);
         rightPanel.add(chartPanel, BorderLayout.CENTER);
         rightPanel.validate();
     }
 
-    private XYDataset createDataSet() {
+    private void createChartForDistanceComparison() {
+        List<Coord> data = simulation.getXYData();
+        XYSeries estimatedDistanceSeries = new XYSeries("Estimated Distance", false);
+        XYSeries walkedDistanceSeries = new XYSeries("Walked Distance", false);
+        estimatedDistanceSeries.add(0.0d, 0.0d);
+        walkedDistanceSeries.add(0.0d, 0.0d);
+        int step = 0;
+        double x = 0.0d;
+        double y = 0.0d;
+        for (Coord coord : data) {
+        	x = coord.getX();
+        	y = coord.getY();
+        	estimatedDistanceSeries.add(step, Math.sqrt(step));
+        	walkedDistanceSeries.add(step, Math.sqrt(x*x + y*y));
+        	step++;
+        }
+        XYSeriesCollection collection = new XYSeriesCollection();
+        collection.addSeries(estimatedDistanceSeries);
+        collection.addSeries(walkedDistanceSeries);
+        distanceComparisonChart = ChartFactory.createXYLineChart("Distance Comparison", "Steps", "Distance", collection);
+    }
+
+    private void createChartForDrunkWalk() {
         List<Coord> data = simulation.getXYData();
         XYSeries series = new XYSeries("Drunk Walk", false);
         series.add(0.0d, 0.0d);
         for (Coord coord : data) {
             series.add(coord.getX(), coord.getY());
         }
-        return new XYSeriesCollection(series);
+        drunkWalkChart = ChartFactory.createXYLineChart("Drunk Walk", "x", "y", new XYSeriesCollection(series));
     }
 
     private void checkValuesAndStartNewSimulation() {
@@ -98,9 +123,13 @@ public class Simulator extends JFrame {
 	        simulation.printReplications();
 
 	        if (replications == 1) {
-	            btnWalk.setEnabled(true);
+	            createChartForDrunkWalk();
+	            createChartForDistanceComparison();
+	        	btnWalk.setEnabled(true);
+	            btnDistance.setEnabled(true);
 	        } else {
 	            btnWalk.setEnabled(false);
+	            btnDistance.setEnabled(false);
 	        }
 	    }
 	}
@@ -111,26 +140,38 @@ public class Simulator extends JFrame {
         rightPanel.repaint();
     }
 
+    private void resetCharts() {
+    	drunkWalkChart = null;
+    	distanceComparisonChart = null;
+    }
+
     private void resetButtons() {
         btnWalk.setEnabled(false);
+        btnDistance.setEnabled(false);
     }
 
     private void createActionListeners() {
 	    btnRun.addActionListener(new ActionListener() {
 	        public void actionPerformed(ActionEvent event) {
 	            resetButtons();
+	            resetCharts();
 	            resetRightPanel();
 	            checkValuesAndStartNewSimulation();
 	        }
 	    });
 	    btnWalk.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
-                plotDrunkWalk();
+                plotChart(drunkWalkChart);
+            }
+        });
+	    btnDistance.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent event) {
+                plotChart(distanceComparisonChart);
             }
         });
 	}
 
-    public void addComponentsToPane(Container pane) {
+	public void addComponentsToPane(Container pane) {
         JPanel leftPanel = new JPanel();
         rightPanel = new JPanel(new BorderLayout());
         rightPanel.setBorder(new TitledBorder("Charts"));
@@ -153,9 +194,15 @@ public class Simulator extends JFrame {
         JPanel outputPanel = new JPanel(new MigLayout("wrap 1"));
         outputPanel.setBorder(new TitledBorder("Output"));
 
+        // Button for the XY walk plot
         btnWalk = new JButton("Show Drunk Walk");
         btnWalk.setEnabled(false);
         outputPanel.add(btnWalk, "span,growx");
+
+        // Button for the distance comparison
+        btnDistance = new JButton("Distance Chart");
+        btnDistance.setEnabled(false);
+        outputPanel.add(btnDistance, "span,growx");
 
         leftPanel.add(inputPanel);
         leftPanel.add(outputPanel);
