@@ -5,6 +5,7 @@ import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.text.DecimalFormat;
 import java.util.List;
 
 import javax.swing.BoxLayout;
@@ -43,6 +44,10 @@ public class Simulator extends JFrame {
     private JFreeChart drunkWalkChart;
     private JFreeChart distanceComparisonChart;
     private JFreeChart histogramChart;
+
+	private JLabel lblTotalDistance;
+
+	private JLabel lblDifference;
 
     private void plotChart(JFreeChart chart) {
     	resetRightPanel();
@@ -88,6 +93,12 @@ public class Simulator extends JFrame {
         }
         drunkWalkChart = ChartFactory.createXYLineChart("Drunk Walk", "x", "y", new XYSeriesCollection(series));
     }
+    
+    private void printOutput(Coord distanceAndDifference) {
+    	DecimalFormat df = new DecimalFormat("#.00");
+    	lblTotalDistance.setText(df.format(distanceAndDifference.getX()));
+    	lblDifference.setText(df.format(distanceAndDifference.getY()));
+    }
 
     private void checkValuesAndStartNewSimulation() {
 	    int steps = 0;
@@ -131,6 +142,7 @@ public class Simulator extends JFrame {
 
 	        if (replications == 1) {
 	            simulation.executeOnce(steps);
+	            printOutput(simulation.getDistanceAndDifference());
 	        	createChartForDrunkWalk(simulation.getWalkedPositions());
 	            createChartForDistanceComparison(simulation.getWalkedDistances());
 	        	btnWalk.setEnabled(true);
@@ -161,11 +173,17 @@ public class Simulator extends JFrame {
         btnWalk.setEnabled(false);
         btnDistance.setEnabled(false);
     }
+    
+    private void resetOutputPanel() {
+    	lblTotalDistance.setText("-");
+    	lblDifference.setText("-");
+    }
 
     private void createActionListeners() {
 	    btnRun.addActionListener(new ActionListener() {
 	        public void actionPerformed(ActionEvent event) {
-	            resetButtons();
+	            resetOutputPanel();
+	        	resetButtons();
 	            resetCharts();
 	            resetRightPanel();
 	            checkValuesAndStartNewSimulation();
@@ -190,6 +208,7 @@ public class Simulator extends JFrame {
         rightPanel.setPreferredSize(new Dimension(600, 400));
         leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.Y_AXIS));
 
+        // ---- Input Panel -----------------------------------------
         JPanel inputPanel = new JPanel(new MigLayout("wrap 2", "[r][l]", "[c][c][c]"));
         inputPanel.setBorder(new TitledBorder("Input"));
         tfSteps = new JTextField(10);
@@ -203,21 +222,35 @@ public class Simulator extends JFrame {
         inputPanel.add(tfReplications);
         inputPanel.add(btnRun, "span,growx");
 
-        JPanel outputPanel = new JPanel(new MigLayout("wrap 1"));
+        // ---- Output Panel -----------------------------------------
+        JPanel outputPanel = new JPanel(new MigLayout("wrap 2", "[r][l]", "[c][c]"));
         outputPanel.setBorder(new TitledBorder("Output"));
+
+        outputPanel.add(new JLabel("Total distance:"));
+        lblTotalDistance = new JLabel("-");
+        outputPanel.add(lblTotalDistance);
+        outputPanel.add(new JLabel("Difference:"));
+        lblDifference = new JLabel("-");
+        outputPanel.add(lblDifference);
+
+        // ---- Action Panel -----------------------------------------
+        JPanel actionPanel = new JPanel(new MigLayout("wrap 1"));
+        actionPanel.setBorder(new TitledBorder("Action"));
 
         // Button for the XY walk plot
         btnWalk = new JButton("Show Drunk Walk");
         btnWalk.setEnabled(false);
-        outputPanel.add(btnWalk, "span,growx");
+        actionPanel.add(btnWalk, "span,growx");
 
         // Button for the distance comparison
         btnDistance = new JButton("Show Distance Chart");
         btnDistance.setEnabled(false);
-        outputPanel.add(btnDistance, "span,growx");
+        actionPanel.add(btnDistance, "span,growx");
 
+        // -----------------------------------------------------------
         leftPanel.add(inputPanel);
         leftPanel.add(outputPanel);
+        leftPanel.add(actionPanel);
 
         pane.setLayout(new BoxLayout(pane, BoxLayout.X_AXIS));
         pane.add(leftPanel);

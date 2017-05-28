@@ -103,6 +103,13 @@ public class MonteCarloSimulation {
 			frequencyDistribution.get(bucketIndex).addSample();
 		}
 	}
+	
+	public Coord getDistanceAndDifference() {
+		double distance = walkedDistances.get(walkedDistances.size()-1);
+		// The first distance in this list is 0.0;
+		double difference = Math.abs(distance - Math.sqrt(walkedDistances.size()-1));
+		return new Coord(distance, difference);
+	}
 
 	public List<Coord> getWalkedPositions() {
 		return walkedPositions;
