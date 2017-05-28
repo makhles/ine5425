@@ -35,7 +35,6 @@ public class Simulator extends JFrame {
 	private JButton btnRun;
 	private JButton btnWalk;
 	private JButton btnDistance;
-	private JButton btnHistogram;
     private JTextField tfSteps;
     private JTextField tfReplications;
     private JPanel rightPanel;
@@ -136,13 +135,12 @@ public class Simulator extends JFrame {
 	            createChartForDistanceComparison(simulation.getWalkedDistances());
 	        	btnWalk.setEnabled(true);
 	            btnDistance.setEnabled(true);
-	            btnHistogram.setEnabled(false);
 	        } else {
 	        	simulation.executeSeveralTimes(steps, replications);
 	            createChartForHistogram(simulation.getFrequencyDistribution());
+	            plotChart(histogramChart);
 	        	btnWalk.setEnabled(false);
 	            btnDistance.setEnabled(false);
-	            btnHistogram.setEnabled(true);
 	        }
 	    }
 	}
@@ -162,7 +160,6 @@ public class Simulator extends JFrame {
     private void resetButtons() {
         btnWalk.setEnabled(false);
         btnDistance.setEnabled(false);
-        btnHistogram.setEnabled(false);
     }
 
     private void createActionListeners() {
@@ -182,11 +179,6 @@ public class Simulator extends JFrame {
 	    btnDistance.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
                 plotChart(distanceComparisonChart);
-            }
-        });
-	    btnHistogram.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent event) {
-                plotChart(histogramChart);
             }
         });
 	}
@@ -223,11 +215,6 @@ public class Simulator extends JFrame {
         btnDistance = new JButton("Show Distance Chart");
         btnDistance.setEnabled(false);
         outputPanel.add(btnDistance, "span,growx");
-
-        // Button for the distance comparison
-        btnHistogram = new JButton("Show Histogram");
-        btnHistogram.setEnabled(false);
-        outputPanel.add(btnHistogram, "span,growx");
 
         leftPanel.add(inputPanel);
         leftPanel.add(outputPanel);
