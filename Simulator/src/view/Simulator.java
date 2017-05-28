@@ -19,10 +19,12 @@ import javax.swing.border.TitledBorder;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
+import org.jfree.data.xy.XYBarDataset;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
 import controller.MonteCarloSimulation;
+import model.Bucket;
 import model.Coord;
 import net.miginfocom.swing.MigLayout;
 
@@ -33,6 +35,7 @@ public class Simulator extends JFrame {
 	private JButton btnRun;
 	private JButton btnWalk;
 	private JButton btnDistance;
+	private JButton btnHistogram;
     private JTextField tfSteps;
     private JTextField tfReplications;
     private JPanel rightPanel;
@@ -40,6 +43,7 @@ public class Simulator extends JFrame {
 
     private JFreeChart drunkWalkChart;
     private JFreeChart distanceComparisonChart;
+    private JFreeChart histogramChart;
 
     private void plotChart(JFreeChart chart) {
     	resetRightPanel();
@@ -47,21 +51,28 @@ public class Simulator extends JFrame {
         rightPanel.add(chartPanel, BorderLayout.CENTER);
         rightPanel.validate();
     }
+    
+    private void createChartForHistogram(List<Bucket> frequencyDistribution) {
+    	XYSeries series = new XYSeries("Series 1", false);
 
-    private void createChartForDistanceComparison() {
-        List<Coord> data = simulation.getXYData();
+    	for (Bucket bucket : frequencyDistribution) {
+    		series.add(bucket.getMeanValue(), bucket.getSamples());
+    	}
+
+    	double barWidth = frequencyDistribution.get(0).getEnd() - frequencyDistribution.get(0).getStart();
+    	XYBarDataset dataSet = new XYBarDataset(new XYSeriesCollection(series), barWidth);
+    	histogramChart = ChartFactory.createXYBarChart("Frequency Distribution", "abs(estimated - computed)", false, "Frequency", dataSet);
+    }
+
+    private void createChartForDistanceComparison(List<Double> data) {
         XYSeries estimatedDistanceSeries = new XYSeries("Estimated Distance", false);
         XYSeries walkedDistanceSeries = new XYSeries("Walked Distance", false);
         estimatedDistanceSeries.add(0.0d, 0.0d);
         walkedDistanceSeries.add(0.0d, 0.0d);
         int step = 0;
-        double x = 0.0d;
-        double y = 0.0d;
-        for (Coord coord : data) {
-        	x = coord.getX();
-        	y = coord.getY();
+        while (step < data.size()) {
         	estimatedDistanceSeries.add(step, Math.sqrt(step));
-        	walkedDistanceSeries.add(step, Math.sqrt(x*x + y*y));
+        	walkedDistanceSeries.add(step, data.get(step));
         	step++;
         }
         XYSeriesCollection collection = new XYSeriesCollection();
@@ -70,8 +81,7 @@ public class Simulator extends JFrame {
         distanceComparisonChart = ChartFactory.createXYLineChart("Distance Comparison", "Steps", "Distance", collection);
     }
 
-    private void createChartForDrunkWalk() {
-        List<Coord> data = simulation.getXYData();
+    private void createChartForDrunkWalk(List<Coord> data) {
         XYSeries series = new XYSeries("Drunk Walk", false);
         series.add(0.0d, 0.0d);
         for (Coord coord : data) {
@@ -119,22 +129,25 @@ public class Simulator extends JFrame {
 	        System.out.println();
 
 	        simulation = new MonteCarloSimulation(steps);
-	        simulation.run(replications);
-	        simulation.printReplications();
 
 	        if (replications == 1) {
-	            createChartForDrunkWalk();
-	            createChartForDistanceComparison();
+	            simulation.executeOnce(steps);
+	        	createChartForDrunkWalk(simulation.getWalkedPositions());
+	            createChartForDistanceComparison(simulation.getWalkedDistances());
 	        	btnWalk.setEnabled(true);
 	            btnDistance.setEnabled(true);
+	            btnHistogram.setEnabled(false);
 	        } else {
-	            btnWalk.setEnabled(false);
+	        	simulation.executeSeveralTimes(steps, replications);
+	            createChartForHistogram(simulation.getFrequencyDistribution());
+	        	btnWalk.setEnabled(false);
 	            btnDistance.setEnabled(false);
+	            btnHistogram.setEnabled(true);
 	        }
 	    }
 	}
-    
-    private void resetRightPanel() {
+
+	private void resetRightPanel() {
         rightPanel.removeAll();
         rightPanel.revalidate();
         rightPanel.repaint();
@@ -143,11 +156,13 @@ public class Simulator extends JFrame {
     private void resetCharts() {
     	drunkWalkChart = null;
     	distanceComparisonChart = null;
+    	histogramChart = null;
     }
 
     private void resetButtons() {
         btnWalk.setEnabled(false);
         btnDistance.setEnabled(false);
+        btnHistogram.setEnabled(false);
     }
 
     private void createActionListeners() {
@@ -169,13 +184,18 @@ public class Simulator extends JFrame {
                 plotChart(distanceComparisonChart);
             }
         });
+	    btnHistogram.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent event) {
+                plotChart(histogramChart);
+            }
+        });
 	}
 
 	public void addComponentsToPane(Container pane) {
         JPanel leftPanel = new JPanel();
         rightPanel = new JPanel(new BorderLayout());
         rightPanel.setBorder(new TitledBorder("Charts"));
-        rightPanel.setPreferredSize(new Dimension(500, 300));
+        rightPanel.setPreferredSize(new Dimension(600, 400));
         leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.Y_AXIS));
 
         JPanel inputPanel = new JPanel(new MigLayout("wrap 2", "[r][l]", "[c][c][c]"));
@@ -200,9 +220,14 @@ public class Simulator extends JFrame {
         outputPanel.add(btnWalk, "span,growx");
 
         // Button for the distance comparison
-        btnDistance = new JButton("Distance Chart");
+        btnDistance = new JButton("Show Distance Chart");
         btnDistance.setEnabled(false);
         outputPanel.add(btnDistance, "span,growx");
+
+        // Button for the distance comparison
+        btnHistogram = new JButton("Show Histogram");
+        btnHistogram.setEnabled(false);
+        outputPanel.add(btnHistogram, "span,growx");
 
         leftPanel.add(inputPanel);
         leftPanel.add(outputPanel);
