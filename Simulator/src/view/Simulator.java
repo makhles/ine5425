@@ -145,6 +145,7 @@ public class Simulator extends JFrame {
 	            printOutput(simulation.getDistanceAndDifference());
 	        	createChartForDrunkWalk(simulation.getWalkedPositions());
 	            createChartForDistanceComparison(simulation.getWalkedDistances());
+	            plotChart(drunkWalkChart);
 	        	btnWalk.setEnabled(true);
 	            btnDistance.setEnabled(true);
 	        } else {
